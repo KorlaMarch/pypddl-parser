@@ -23,7 +23,7 @@ from predicate import Predicate
 from action    import Action
 from domain    import Domain
 from problem   import Problem
-
+from causal    import Causal
 
 tokens = (
     'NAME',
@@ -52,7 +52,10 @@ tokens = (
     'PROBLEM_KEY',
     'OBJECTS_KEY',
     'INIT_KEY',
-    'GOAL_KEY'
+    'GOAL_KEY',
+    'CAUSAL_KEY',
+    'HEURISTIC_KEY',
+    'RELATION_KEY'
 )
 
 
@@ -84,7 +87,10 @@ reserved = {
     ':domain'                   : 'DOMAIN_KEY',
     ':objects'                  : 'OBJECTS_KEY',
     ':init'                     : 'INIT_KEY',
-    ':goal'                     : 'GOAL_KEY'
+    ':goal'                     : 'GOAL_KEY',
+    ':cause'                    : 'CAUSAL_KEY',
+    ':heuristic'                : 'HEURISTIC_KEY',
+    ':relation'                 : 'RELATION_KEY'
 }
 
 
@@ -131,8 +137,8 @@ def p_pddl(p):
 
 
 def p_domain(p):
-    '''domain : LPAREN DEFINE_KEY domain_def require_def types_def predicates_def action_def_lst RPAREN'''
-    p[0] = Domain(p[3], p[4], p[5], p[6], p[7])
+    '''domain : LPAREN DEFINE_KEY domain_def require_def types_def predicates_def action_def_lst causal_def_lst RPAREN'''
+    p[0] = Domain(p[3], p[4], p[5], p[6], p[7], p[8])
 
 
 def p_problem(p):
@@ -195,6 +201,7 @@ def p_types_def(p):
     '''types_def : LPAREN TYPES_KEY names_lst RPAREN'''
     p[0] = p[3]
 
+# -------------------- Predicate List -----------------------
 
 def p_predicates_def(p):
     '''predicates_def : LPAREN PREDICATES_KEY predicate_def_lst RPAREN'''
@@ -218,6 +225,7 @@ def p_predicate_def(p):
     elif len(p) == 5:
         p[0] = Predicate(p[2], p[3])
 
+# -------------------- Actions -----------------------
 
 def p_action_def_lst(p):
     '''action_def_lst : action_def action_def_lst
@@ -243,8 +251,8 @@ def p_parameters_def(p):
 
 
 def p_action_def_body(p):
-    '''action_def_body : precond_def effects_def'''
-    p[0] = (p[1], p[2])
+    '''action_def_body : precond_def effects_def heuristic_def'''
+    p[0] = (p[1], p[2], p[3])
 
 
 def p_precond_def(p):
@@ -265,6 +273,11 @@ def p_effects_def(p):
         p[0] = p[4]
 
 
+def p_heuristic_def(p):
+    '''heuristic_def : HEURISTIC_KEY LPAREN AND_KEY RELATION_KEY effects_lst RPAREN'''
+    p[0] = p[4]
+
+
 def p_effects_lst(p):
     '''effects_lst : effect effects_lst
                    | effect'''
@@ -282,6 +295,29 @@ def p_effect(p):
     elif len(p) == 6:
         p[0] = (p[3], p[4])
 
+
+# ------------------------- Causal Structure ------------------------
+def p_causal_def_lst(p):
+    '''causal_def_lst : causal_def causal_def_lst
+                      | causal_def'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    elif len(p) == 3:
+        p[0] = [p[1]] + p[2]
+
+def p_causal_def(p):
+    '''causal_def : LPAREN CAUSAL_KEY NAME parameters_def relation_def RPAREN'''
+    p[0] = Causal(p[3], p[4], p[5])
+
+def p_relation_def(p):
+    '''relation_def : RELATION_KEY LPAREN AND_KEY literals_lst RPAREN
+                    | RELATION_KEY literal'''
+    if len(p) == 3:
+        p[0] = [p[2]]
+    elif len(p) == 6:
+        p[0] = p[4]
+
+# -------------------------------------------------------------------
 
 def p_literals_lst(p):
     '''literals_lst : literal literals_lst
