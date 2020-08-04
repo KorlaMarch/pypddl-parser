@@ -23,7 +23,7 @@ from predicate import Predicate
 from action    import Action
 from domain    import Domain
 from problem   import Problem
-from causal    import CausalGraph, CausalNode
+from causal    import Causal
 
 tokens = (
     'NAME',
@@ -56,8 +56,7 @@ tokens = (
     'CAUSAL_KEY',
     'HEURISTIC_KEY',
     'RELATION_KEY',
-    'HINT_KEY',
-    'MODEL_KEY'
+    'HINT_KEY'
 )
 
 
@@ -93,8 +92,7 @@ reserved = {
     ':cause'                    : 'CAUSAL_KEY',
     ':heuristic'                : 'HEURISTIC_KEY',
     ':relation'                 : 'RELATION_KEY',
-    ':hint'                     : 'HINT_KEY',
-    ':model'                    : 'MODEL_KEY'
+    ':hint'                     : 'HINT_KEY'
 }
 
 
@@ -141,12 +139,12 @@ def p_pddl(p):
 
 
 def p_domain(p):
-    '''domain : LPAREN DEFINE_KEY domain_def model_def_lst RPAREN'''
+    '''domain : LPAREN DEFINE_KEY domain_def require_def types_def predicates_def action_def_lst causal_def_lst RPAREN'''
     p[0] = Domain(p[3], p[4], p[5], p[6], p[7], p[8])
 
 
 def p_problem(p):
-    '''problem : LPAREN DEFINE_KEY problem_def domain_def goal_def hint_def RPAREN'''
+    '''problem : LPAREN DEFINE_KEY problem_def domain_def objects_def init_def goal_def hint_def RPAREN'''
     p[0] = Problem(p[3], p[4], p[5], p[6], p[7])
 
 
@@ -154,21 +152,54 @@ def p_domain_def(p):
     '''domain_def : LPAREN DOMAIN_KEY NAME RPAREN'''
     p[0] = p[3]
 
-# ------------------- Problem -------------------------
 
 def p_problem_def(p):
     '''problem_def : LPAREN PROBLEM_KEY NAME RPAREN'''
     p[0] = p[3]
 
 
+def p_objects_def(p):
+    '''objects_def : LPAREN OBJECTS_KEY typed_constants_lst RPAREN'''
+    p[0] = p[3]
+
+
+def p_init_def(p):
+    '''init_def : LPAREN INIT_KEY LPAREN AND_KEY ground_predicates_lst RPAREN RPAREN
+                | LPAREN INIT_KEY ground_predicates_lst RPAREN'''
+    if len(p) == 5:
+        p[0] = p[3]
+    elif len(p) == 8:
+        p[0] = p[5]
+
+
 def p_goal_def(p):
     '''goal_def : LPAREN GOAL_KEY LPAREN AND_KEY ground_predicates_lst RPAREN RPAREN'''
     p[0] = p[5]
 
-
 def p_hint_def(p):
     '''hint_def : LPAREN HINT_KEY NAME RPAREN'''
     p[0] = p[3]
+
+def p_require_def(p):
+    '''require_def : LPAREN REQUIREMENTS_KEY require_key_lst RPAREN'''
+    p[0] = p[3]
+
+
+def p_require_key_lst(p):
+    '''require_key_lst : require_key require_key_lst
+                       | require_key'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    elif len(p) == 3:
+        p[0] = [p[1]] + p[2]
+
+
+def p_require_key(p):
+    '''require_key : STRIPS_KEY
+                   | EQUALITY_KEY
+                   | TYPING_KEY
+                   | PROBABILISTIC_EFFECTS_KEY'''
+    p[0] = str(p[1])
 
 
 def p_types_def(p):
@@ -199,6 +230,22 @@ def p_predicate_def(p):
     elif len(p) == 5:
         p[0] = Predicate(p[2], p[3])
 
+# -------------------- Actions -----------------------
+
+def p_action_def_lst(p):
+    '''action_def_lst : action_def action_def_lst
+                      | action_def'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    elif len(p) == 3:
+        p[0] = [p[1]] + p[2]
+
+
+def p_action_def(p):
+    '''action_def : LPAREN ACTION_KEY NAME parameters_def action_def_body RPAREN'''
+    p[0] = Action(p[3], p[4], p[5][0], p[5][1])
+
+
 def p_parameters_def(p):
     '''parameters_def : PARAMETERS_KEY LPAREN typed_variables_lst RPAREN
                       | PARAMETERS_KEY LPAREN RPAREN'''
@@ -207,19 +254,54 @@ def p_parameters_def(p):
     elif len(p) == 5:
         p[0] = p[3]
 
-# ------------------------- Causal Structure ------------------------
-def p_model_def_lst(p):
-    '''model_def_lst : model_def model_def_lst
-                     | model_def'''
+
+def p_action_def_body(p):
+    '''action_def_body : precond_def effects_def heuristic_def'''
+    p[0] = (p[1], p[2], p[3])
+
+
+def p_precond_def(p):
+    '''precond_def : PRECONDITION_KEY LPAREN AND_KEY literals_lst RPAREN
+                   | PRECONDITION_KEY literal'''
+    if len(p) == 3:
+        p[0] = [p[2]]
+    elif len(p) == 6:
+        p[0] = p[4]
+
+
+def p_effects_def(p):
+    '''effects_def : EFFECT_KEY LPAREN AND_KEY effects_lst RPAREN
+                   | EFFECT_KEY effect'''
+    if len(p) == 3:
+        p[0] = [p[2]]
+    elif len(p) == 6:
+        p[0] = p[4]
+
+
+def p_heuristic_def(p):
+    '''heuristic_def : HEURISTIC_KEY LPAREN NAME relation_def RPAREN'''
+    p[0] = (p[3], p[4])
+
+
+def p_effects_lst(p):
+    '''effects_lst : effect effects_lst
+                   | effect'''
     if len(p) == 2:
         p[0] = [p[1]]
     elif len(p) == 3:
         p[0] = [p[1]] + p[2]
 
-def p_model_def(p):
-    '''causal_def : LPAREN MODEL_KEY NAME parameters_def causal_def_lst RPAREN'''
-    p[0] = CausalGraph(p[3], p[4], p[5])
 
+def p_effect(p):
+    '''effect : literal
+              | LPAREN PROBABILISTIC_KEY PROBABILITY literal RPAREN'''
+    if len(p) == 2:
+        p[0] = (1.0, p[1])
+    elif len(p) == 6:
+        p[0] = (p[3], p[4])
+
+
+# ------------------------- Causal Structure ------------------------
 def p_causal_def_lst(p):
     '''causal_def_lst : causal_def causal_def_lst
                       | causal_def'''
@@ -229,8 +311,8 @@ def p_causal_def_lst(p):
         p[0] = [p[1]] + p[2]
 
 def p_causal_def(p):
-    '''causal_def : LPAREN CAUSAL_KEY NAME relation_def RPAREN'''
-    p[0] = CausalNode(p[3], p[4])
+    '''causal_def : LPAREN CAUSAL_KEY NAME parameters_def relation_def RPAREN'''
+    p[0] = Causal(p[3], p[4], p[5])
 
 def p_relation_def(p):
     '''relation_def : RELATION_KEY LPAREN AND_KEY literals_lst RPAREN

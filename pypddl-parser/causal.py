@@ -13,13 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with pypddl-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-
-class Causal(object):
-
-    def __init__(self, name, params, relation):
+class CausalGraph(object):
+    def __init__(self, name, params, nodes):
         self._name    = name
-        self._params  = params
-        self._relation = relation
+        self._params   = params
+        self._nodes = nodes
 
     @property
     def name(self):
@@ -30,10 +28,29 @@ class Causal(object):
         return self._params[:]
 
     @property
+    def nodes(self):
+        return self._nodes[:]
+
+    def __str__(self):
+        operator_str  = '{0}({1})\n'.format(self._name, ', '.join(map(str, self._params)))
+        operator_str += '>> nodes: {0}\n'.format(', '.join(map(str, self._nodes)))
+        return operator_str
+
+class CausalNode(object):
+
+    def __init__(self, name, relation):
+        self._name    = name
+        self._relation = relation
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
     def relation(self):
         return self._relation[:]
 
     def __str__(self):
-        operator_str  = '{0}({1})\n'.format(self._name, ', '.join(map(str, self._params)))
+        operator_str  = '{0}\n'.format(self._name)
         operator_str += '>> relation: {0}\n'.format(', '.join(map(str, self._relation)))
         return operator_str

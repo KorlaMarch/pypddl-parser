@@ -15,12 +15,8 @@
 
 class Domain(object):
 
-    def __init__(self, name, requirements, types, predicates, operators, causals):
+    def __init__(self, name, causals):
         self._name = name
-        self._requirements = requirements
-        self._types = types
-        self._predicates = predicates
-        self._operators = operators
         self._causals = causals
 
     @property
@@ -28,32 +24,11 @@ class Domain(object):
         return self._name
 
     @property
-    def requirements(self):
-        return self._requirements[:]
-
-    @property
-    def types(self):
-        return self._types[:]
-
-    @property
-    def predicates(self):
-        return self._predicates[:]
-
-    @property
-    def operators(self):
-        return self._operators[:]
-
-    @property
     def causals(self):
         return self._causals[:]
 
     def __str__(self):
         domain_str  = '@ Domain: {0}\n'.format(self._name)
-        domain_str += '>> requirements: {0}\n'.format(', '.join(self._requirements))
-        domain_str += '>> types: {0}\n'.format(', '.join(self._types))
-        domain_str += '>> predicates: {0}\n'.format(', '.join(map(str, self._predicates)))
-        domain_str += '>> operators:\n    {0}\n'.format(
-            '\n    '.join(str(op).replace('\n', '\n    ') for op in self._operators))
-        domain_str += '>> causals:\n    {0}\n'.format(
+        domain_str += '>> causals graph:\n    {0}\n'.format(
             '\n    '.join(str(op).replace('\n', '\n    ') for op in self._causals))
         return domain_str
