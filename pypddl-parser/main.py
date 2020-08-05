@@ -20,12 +20,12 @@ from pddlparser import PDDLParser
 
 
 def parse():
-    usage = 'python3 main.py <DOMAIN> <INSTANCE>'
+    usage = 'python3 main.py <DOMAIN>'
     description = 'pypddl-parser is a PDDL parser built on top of ply.'
     parser = argparse.ArgumentParser(usage=usage, description=description)
 
     parser.add_argument('domain',  type=str, help='path to PDDL domain file')
-    parser.add_argument('problem', type=str, help='path to PDDL problem file')
+    # parser.add_argument('problem', type=str, help='path to PDDL problem file')
 
     return parser.parse_args()
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     args = parse()
 
     domain  = PDDLParser.parse(args.domain)
-    problem = PDDLParser.parse(args.problem)
+    # problem = PDDLParser.parse(args.problem)
 
     print(domain)
-    print(problem)
+    # print(problem)

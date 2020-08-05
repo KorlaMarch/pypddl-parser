@@ -33,7 +33,8 @@ class CausalGraph(object):
 
     def __str__(self):
         operator_str  = '{0}({1})\n'.format(self._name, ', '.join(map(str, self._params)))
-        operator_str += '>> nodes: {0}\n'.format(', '.join(map(str, self._nodes)))
+        operator_str += '>> nodes:\n    {0}\n'.format(
+            '\n    '.join(str(op).replace('\n', '\n    ') for op in self._nodes))
         return operator_str
 
 class CausalNode(object):

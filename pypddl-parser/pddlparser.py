@@ -28,33 +28,18 @@ from causal    import CausalGraph, CausalNode
 tokens = (
     'NAME',
     'VARIABLE',
-    'PROBABILITY',
     'LPAREN',
     'RPAREN',
     'HYPHEN',
     'EQUALS',
     'DEFINE_KEY',
     'DOMAIN_KEY',
-    'REQUIREMENTS_KEY',
-    'STRIPS_KEY',
-    'EQUALITY_KEY',
-    'TYPING_KEY',
-    'PROBABILISTIC_EFFECTS_KEY',
-    'TYPES_KEY',
-    'PREDICATES_KEY',
-    'ACTION_KEY',
     'PARAMETERS_KEY',
-    'PRECONDITION_KEY',
-    'EFFECT_KEY',
     'AND_KEY',
     'NOT_KEY',
-    'PROBABILISTIC_KEY',
     'PROBLEM_KEY',
-    'OBJECTS_KEY',
-    'INIT_KEY',
     'GOAL_KEY',
     'CAUSAL_KEY',
-    'HEURISTIC_KEY',
     'RELATION_KEY',
     'HINT_KEY',
     'MODEL_KEY'
@@ -71,27 +56,13 @@ t_ignore = ' \t'
 reserved = {
     'define'                    : 'DEFINE_KEY',
     'domain'                    : 'DOMAIN_KEY',
-    ':requirements'             : 'REQUIREMENTS_KEY',
-    ':strips'                   : 'STRIPS_KEY',
-    ':equality'                 : 'EQUALITY_KEY',
-    ':typing'                   : 'TYPING_KEY',
-    ':probabilistic-effects'    : 'PROBABILISTIC_EFFECTS_KEY',
-    ':types'                    : 'TYPES_KEY',
-    ':predicates'               : 'PREDICATES_KEY',
-    ':action'                   : 'ACTION_KEY',
     ':parameters'               : 'PARAMETERS_KEY',
-    ':precondition'             : 'PRECONDITION_KEY',
-    ':effect'                   : 'EFFECT_KEY',
     'and'                       : 'AND_KEY',
     'not'                       : 'NOT_KEY',
-    'probabilistic'             : 'PROBABILISTIC_KEY',
     'problem'                   : 'PROBLEM_KEY',
     ':domain'                   : 'DOMAIN_KEY',
-    ':objects'                  : 'OBJECTS_KEY',
-    ':init'                     : 'INIT_KEY',
     ':goal'                     : 'GOAL_KEY',
     ':cause'                    : 'CAUSAL_KEY',
-    ':heuristic'                : 'HEURISTIC_KEY',
     ':relation'                 : 'RELATION_KEY',
     ':hint'                     : 'HINT_KEY',
     ':model'                    : 'MODEL_KEY'
@@ -142,12 +113,12 @@ def p_pddl(p):
 
 def p_domain(p):
     '''domain : LPAREN DEFINE_KEY domain_def model_def_lst RPAREN'''
-    p[0] = Domain(p[3], p[4], p[5], p[6], p[7], p[8])
+    p[0] = Domain(p[3], p[4])
 
 
 def p_problem(p):
     '''problem : LPAREN DEFINE_KEY problem_def domain_def goal_def hint_def RPAREN'''
-    p[0] = Problem(p[3], p[4], p[5], p[6], p[7])
+    p[0] = Problem(p[3], p[4], p[5], p[6])
 
 
 def p_domain_def(p):
@@ -170,37 +141,10 @@ def p_hint_def(p):
     '''hint_def : LPAREN HINT_KEY NAME RPAREN'''
     p[0] = p[3]
 
-
-def p_types_def(p):
-    '''types_def : LPAREN TYPES_KEY names_lst RPAREN'''
-    p[0] = p[3]
-
 # -------------------- Predicate List -----------------------
 
-def p_predicates_def(p):
-    '''predicates_def : LPAREN PREDICATES_KEY predicate_def_lst RPAREN'''
-    p[0] = p[3]
-
-
-def p_predicate_def_lst(p):
-    '''predicate_def_lst : predicate_def predicate_def_lst
-                         | predicate_def'''
-    if len(p) == 2:
-        p[0] = [p[1]]
-    elif len(p) == 3:
-        p[0] = [p[1]] + p[2]
-
-
-def p_predicate_def(p):
-    '''predicate_def : LPAREN NAME typed_variables_lst RPAREN
-                     | LPAREN NAME RPAREN'''
-    if len(p) == 4:
-        p[0] = Predicate(p[2])
-    elif len(p) == 5:
-        p[0] = Predicate(p[2], p[3])
-
 def p_parameters_def(p):
-    '''parameters_def : PARAMETERS_KEY LPAREN typed_variables_lst RPAREN
+    '''parameters_def : PARAMETERS_KEY LPAREN variables_lst RPAREN
                       | PARAMETERS_KEY LPAREN RPAREN'''
     if len(p) == 4:
         p[0] = []
@@ -217,7 +161,7 @@ def p_model_def_lst(p):
         p[0] = [p[1]] + p[2]
 
 def p_model_def(p):
-    '''causal_def : LPAREN MODEL_KEY NAME parameters_def causal_def_lst RPAREN'''
+    '''model_def : LPAREN MODEL_KEY NAME parameters_def causal_def_lst RPAREN'''
     p[0] = CausalGraph(p[3], p[4], p[5])
 
 def p_causal_def_lst(p):
@@ -290,24 +234,6 @@ def p_ground_predicate(p):
         p[0] = Predicate(p[2], p[3])
 
 
-def p_typed_constants_lst(p):
-    '''typed_constants_lst : constants_lst HYPHEN type typed_constants_lst
-                           | constants_lst HYPHEN type'''
-    if len(p) == 4:
-        p[0] = [ Term.constant(value, p[3]) for value in p[1] ]
-    elif len(p) == 5:
-        p[0] = [ Term.constant(value, p[3]) for value in p[1] ] + p[4]
-
-
-def p_typed_variables_lst(p):
-    '''typed_variables_lst : variables_lst HYPHEN type typed_variables_lst
-                           | variables_lst HYPHEN type'''
-    if len(p) == 4:
-        p[0] = [ Term.variable(name, p[3]) for name in p[1] ]
-    elif len(p) == 5:
-        p[0] = [ Term.variable(name, p[3]) for name in p[1] ] + p[4]
-
-
 def p_constants_lst(p):
     '''constants_lst : constant constants_lst
                      | constant'''
@@ -324,22 +250,6 @@ def p_variables_lst(p):
         p[0] = [p[1]]
     elif len(p) == 3:
         p[0] = [p[1]] + p[2]
-
-
-def p_names_lst(p):
-    '''names_lst : NAME names_lst
-                 | NAME'''
-    if len(p) == 1:
-        p[0] = []
-    elif len(p) == 2:
-        p[0] = [p[1]]
-    elif len(p) == 3:
-        p[0] = [p[1]] + p[2]
-
-
-def p_type(p):
-    '''type : NAME'''
-    p[0] = p[1]
 
 
 def p_constant(p):
